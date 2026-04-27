@@ -4,10 +4,10 @@ install:
 	pnpm install
 
 dev:
-	doppler run --project hq-command --config dev -- pnpm dev --port 3000
+	doppler run -- pnpm dev --port 3000
 
 build:
-	doppler run --project hq-command --config dev -- pnpm build
+	doppler run -- pnpm build
 
 lint:
 	pnpm lint
@@ -19,4 +19,4 @@ test:
 	pnpm test
 
 docker-build:
-	docker build --build-arg DOPPLER_TOKEN=$$DOPPLER_TOKEN --build-arg APP_ENV=dev -t hq:local .
+	docker build --build-arg DOPPLER_TOKEN=$$DOPPLER_TOKEN -t hq:local .

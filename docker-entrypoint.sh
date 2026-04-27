@@ -1,15 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
-case "${APP_ENV:-prd}" in
-    dev) DOPPLER_CONFIG="dev" ;;
-    stg) DOPPLER_CONFIG="stg" ;;
-    prd) DOPPLER_CONFIG="prd" ;;
-    *)
-        echo "Unknown APP_ENV: ${APP_ENV}" >&2
-        exit 1
-        ;;
-esac
-
-exec doppler run --project hq-command --config "$DOPPLER_CONFIG" -- \
-    node server.js
+# The DOPPLER_TOKEN service token is scoped to a single Doppler config
+# (dev / stg / prd), so project and config are inferred — no APP_ENV needed.
+# APP_ENV itself is stored *inside* each Doppler config and injected by
+# `doppler run` for the app to read.
+exec doppler run -- node server.js

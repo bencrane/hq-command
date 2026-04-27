@@ -26,11 +26,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build args from Railway. APP_ENV selects the Doppler config baked into the bundle.
+# Doppler service token. Project + config are inferred from the token's scope,
+# so we never need to pass --project or --config (and never need APP_ENV here).
 ARG DOPPLER_TOKEN
-ARG APP_ENV=prd
 ENV DOPPLER_TOKEN=$DOPPLER_TOKEN
-RUN doppler run --project hq-command --config "$APP_ENV" -- pnpm build
+RUN doppler run -- pnpm build
 
 # ---- runner ----
 FROM node:20-slim AS runner

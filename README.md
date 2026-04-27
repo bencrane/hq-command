@@ -23,7 +23,7 @@ the operator's Supabase JWT attached.
 | `NEXT_PUBLIC_SUPABASE_URL` | Same value as hq-x's `HQX_SUPABASE_URL`. Inlined into client bundle. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Same value as hq-x's `HQX_SUPABASE_PUBLISHABLE_KEY`. Inlined into client bundle. |
 | `HQX_API_BASE_URL` | Base URL of the hq-x service, no trailing slash. Local dev: `http://localhost:8000`. Staging/prod: the corresponding Railway public URL of hq-x. |
-| `APP_ENV` | `dev`, `stg`, or `prd`. |
+| `APP_ENV` | `dev`, `stg`, or `prd` — must match the Doppler config it lives in (i.e. the `dev` config has `APP_ENV=dev`, etc.). The app reads this at runtime; the Doppler token's scope drives which config is loaded, so `APP_ENV` only needs to be set inside Doppler, never on Railway. |
 
 > The frontend never needs `HQX_SUPABASE_SERVICE_ROLE_KEY` or any Supabase JWT
 > secret. All privileged operations go through `hq-x`.
@@ -38,31 +38,25 @@ the operator's Supabase JWT attached.
 
 ## Deploy (Railway)
 
-The repo builds via the `Dockerfile`. Railway must inject **both** of these
-variables — and each one must be available **at build time as well as runtime**:
+The repo builds via the `Dockerfile`. Railway only needs **one** service variable:
 
-- `DOPPLER_TOKEN` — Doppler service token scoped to project `hq-command`, config matching `APP_ENV`.
-- `APP_ENV` — `dev` | `stg` | `prd`.
+- `DOPPLER_TOKEN` — a Doppler **service token** scoped to the config you want
+  this Railway service to deploy from (a `prd`-scoped token for the prod
+  service, `stg` for staging, etc.). The token's scope determines which
+  Doppler config gets loaded — there's no separate `APP_ENV` to keep in sync.
 
-### How to mark a variable "Available at build time" in Railway
+Railway forwards service variables as Docker `--build-arg`s automatically when
+the builder is `DOCKERFILE`, so you don't need to mark anything "available at
+build time" — `DOPPLER_TOKEN` reaches both build and runtime as-is.
 
-This is the **#1 way the first deploy fails** and is non-obvious:
+`NEXT_PUBLIC_*` values are baked into the client bundle at `next build` time,
+which is why the builder stage runs under `doppler run`. The runtime stage
+also runs under `doppler run` to inject server-only secrets like
+`HQX_API_BASE_URL` and `APP_ENV`.
 
-1. In Railway, open the service → **Variables** tab.
-2. Add `DOPPLER_TOKEN` and `APP_ENV` as normal service variables (this gives
-   them to the running container).
-3. Click each variable, then enable **"Available at build time"**. Railway will
-   then forward that variable as a Docker `--build-arg` during image build.
-4. Do this for **both** variables. Missing this step on either one will cause
-   the `doppler run ... pnpm build` step in the Dockerfile to fail with a
-   missing-token error, **or** the build will succeed but ship with empty
-   `NEXT_PUBLIC_*` values inlined into the client bundle (the more confusing
-   failure mode — login will silently break in the browser).
-
-Why both phases need them: `NEXT_PUBLIC_*` values are baked into the client
-bundle at `next build` time, so the builder stage runs under `doppler run` and
-needs the token; the runtime stage also runs under `doppler run` to inject
-server-only secrets like `HQX_API_BASE_URL`.
+To switch a Railway service between environments (e.g. promote from staging to
+production), swap `DOPPLER_TOKEN` for a token scoped to the new config.
+Nothing else needs to change.
 
 Other Railway settings:
 
