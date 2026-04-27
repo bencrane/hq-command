@@ -10,22 +10,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login');
 
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
-        <div className="text-sm font-semibold">hq</div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-neutral-600">{user.email}</span>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded border border-neutral-300 px-3 py-1 hover:bg-neutral-100"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
-      <main className="p-6">{children}</main>
+    <div className="min-h-screen bg-black text-white">
+      <div className="absolute left-6 top-4 text-lg font-semibold tracking-tight">HQ</div>
+      {children}
+      <form action={signOut} className="absolute bottom-4 left-6">
+        <button
+          type="submit"
+          className="text-xs text-neutral-500 hover:text-white"
+        >
+          Sign out
+        </button>
+      </form>
     </div>
   );
 }
