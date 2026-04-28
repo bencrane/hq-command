@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Boxes, Truck } from 'lucide-react';
-import { endpointGroups } from '@/lib/fmcsa/registry';
+import { useQueryClient } from '@tanstack/react-query';
+import { endpointGroups, type FmcsaEndpoint } from '@/lib/fmcsa/registry';
+import { DEFAULT_LIMIT } from '@/lib/fmcsa/url-state';
 
 const GROUP_ICON = {
   audiences: Boxes,
@@ -13,6 +15,17 @@ const GROUP_ICON = {
 export function FmcsaSidebar() {
   const pathname = usePathname();
   const groups = endpointGroups();
+  const queryClient = useQueryClient();
+
+  const prefetch = (endpoint: FmcsaEndpoint) => {
+    const body = { limit: DEFAULT_LIMIT, offset: 0 };
+    void queryClient.prefetchQuery({
+      queryKey: [endpoint.slug, body],
+      queryFn: () =>
+        (endpoint.fetch as (req: Record<string, unknown>) => Promise<unknown>)(body),
+      staleTime: 5 * 60_000,
+    });
+  };
 
   return (
     <aside
@@ -41,6 +54,9 @@ export function FmcsaSidebar() {
                     <li key={endpoint.slug}>
                       <Link
                         href={href}
+                        prefetch
+                        onMouseEnter={() => prefetch(endpoint)}
+                        onFocus={() => prefetch(endpoint)}
                         className={
                           'block rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors ' +
                           (active

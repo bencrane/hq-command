@@ -9,7 +9,8 @@ export function FmcsaQueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
+            staleTime: 5 * 60_000,
+            gcTime: 30 * 60_000,
             retry: false,
             refetchOnWindowFocus: false,
             placeholderData: (prev: unknown) => prev,
