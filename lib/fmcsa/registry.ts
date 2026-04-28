@@ -14,6 +14,7 @@ import {
   type NewEntrants90dSignal,
   type RecentRevocationsSignal,
 } from '@/lib/dex-fmcsa';
+import { DEFAULT_SLUG } from './constants';
 import {
   formatBool,
   formatDate,
@@ -784,7 +785,7 @@ export const ENDPOINTS: FmcsaEndpoint[] = [
   safeMidMarket,
 ];
 
-export const DEFAULT_SLUG = 'audiences/new-entrants-90d';
+export { DEFAULT_SLUG };
 
 export function findEndpoint(slug: string): FmcsaEndpoint | undefined {
   return ENDPOINTS.find((e) => e.slug === slug);
