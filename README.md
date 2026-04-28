@@ -20,8 +20,8 @@ the operator's Supabase JWT attached.
 
 | Name | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Same value as hq-x's `HQX_SUPABASE_URL`. Inlined into client bundle. |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Same value as hq-x's `HQX_SUPABASE_PUBLISHABLE_KEY`. Inlined into client bundle. |
+| `NEXT_PUBLIC_HQX_SUPABASE_URL` | Same value as hq-x's `HQX_SUPABASE_URL`. Inlined into client bundle. |
+| `NEXT_PUBLIC_HQX_SUPABASE_PUBLISHABLE_KEY` | Same value as hq-x's `HQX_SUPABASE_PUBLISHABLE_KEY`. Inlined into client bundle. |
 | `HQX_API_BASE_URL` | Base URL of the hq-x service, no trailing slash. Local dev: `http://localhost:8000`. Staging/prod: the corresponding Railway public URL of hq-x. |
 | `APP_ENV` | `dev`, `stg`, or `prd` — must match the Doppler config it lives in (i.e. the `dev` config has `APP_ENV=dev`, etc.). The app reads this at runtime; the Doppler token's scope drives which config is loaded, so `APP_ENV` only needs to be set inside Doppler, never on Railway. |
 

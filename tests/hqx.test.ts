@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 
 beforeAll(() => {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'pk_test';
+  process.env.NEXT_PUBLIC_HQX_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.NEXT_PUBLIC_HQX_SUPABASE_PUBLISHABLE_KEY = 'pk_test';
   process.env.HQX_API_BASE_URL = 'https://hq-x.test';
   process.env.APP_ENV = 'dev';
 });
