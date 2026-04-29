@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { samSource } from '@/lib/data-sources/sources/sam';
+import { SAM_META } from '@/lib/data-sources/source-meta';
 
 export default function SamIndex() {
-  redirect(`/admin/sam/${samSource.defaultSlug}`);
+  redirect(`/admin/${SAM_META.pathSegment}/${SAM_META.defaultSlug}`);
 }

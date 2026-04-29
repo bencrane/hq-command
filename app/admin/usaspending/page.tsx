@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { usaspendingSource } from '@/lib/data-sources/sources/usaspending';
+import { USASPENDING_META } from '@/lib/data-sources/source-meta';
 
 export default function UsaspendingIndex() {
-  redirect(`/admin/usaspending/${usaspendingSource.defaultSlug}`);
+  redirect(`/admin/${USASPENDING_META.pathSegment}/${USASPENDING_META.defaultSlug}`);
 }
