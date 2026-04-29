@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Boxes, Building2, FileText, Layers, Mailbox, Mic } from 'lucide-react';
+import { ArrowUpRight, Layers, Mailbox, Mic, Target } from 'lucide-react';
 
 interface AdminTile {
   href: string;
@@ -10,22 +10,11 @@ interface AdminTile {
 
 const TILES: AdminTile[] = [
   {
-    href: '/admin/fmcsa',
-    title: 'FMCSA',
-    description: 'Carrier audiences and search across the FMCSA dataset.',
-    icon: Boxes,
-  },
-  {
-    href: '/admin/usaspending',
-    title: 'USAspending',
-    description: 'Federal contract recipients — audiences and recipient leads.',
-    icon: FileText,
-  },
-  {
-    href: '/admin/sam',
-    title: 'SAM.gov',
-    description: 'SAM-registered entity search and registration stats.',
-    icon: Building2,
+    href: '/admin/audience-builder',
+    title: 'Audience Builder',
+    description:
+      'Build audiences from criteria across FMCSA, USAspending, and SAM with live counts.',
+    icon: Target,
   },
   {
     href: '/admin/audiences',
