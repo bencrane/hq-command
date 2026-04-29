@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { fmcsaSource } from '@/lib/data-sources/sources/fmcsa';
+import { FMCSA_META } from '@/lib/data-sources/source-meta';
 
 export default function FmcsaIndex() {
-  redirect(`/admin/fmcsa/${fmcsaSource.defaultSlug}`);
+  redirect(`/admin/${FMCSA_META.pathSegment}/${FMCSA_META.defaultSlug}`);
 }
