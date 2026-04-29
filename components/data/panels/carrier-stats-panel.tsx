@@ -1,9 +1,9 @@
 'use client';
 
-import type { CarrierStatsData } from '@/lib/dex-fmcsa';
-import { formatNumber } from '@/lib/fmcsa/format';
+import type { CarrierStatsData } from '@/lib/dex/fmcsa';
+import { formatNumber } from '@/lib/data-sources/format';
 
-export function StatsPanel({ data }: { data: CarrierStatsData }) {
+export function CarrierStatsPanel({ data }: { data: CarrierStatsData }) {
   const tiles: { label: string; value: number }[] = [
     { label: 'Total carriers', value: data.total_carriers },
     { label: 'With alerts', value: data.carriers_with_alerts },
@@ -63,10 +63,7 @@ export function StatsPanel({ data }: { data: CarrierStatsData }) {
               ))}
               {data.carriers_by_state.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={2}
-                    className="px-3 py-3 text-center text-[var(--color-text-tertiary)]"
-                  >
+                  <td colSpan={2} className="px-3 py-3 text-center text-[var(--color-text-tertiary)]">
                     No state breakdown available
                   </td>
                 </tr>
