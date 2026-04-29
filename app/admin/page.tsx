@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Boxes, Layers, Mic } from 'lucide-react';
+import { ArrowUpRight, Boxes, Layers, Mailbox, Mic } from 'lucide-react';
 
 interface AdminTile {
   href: string;
@@ -26,6 +26,12 @@ const TILES: AdminTile[] = [
     title: 'Voice Agents',
     description: 'Configure and manage voice agents.',
     icon: Mic,
+  },
+  {
+    href: '/admin/dmaas',
+    title: 'DMaaS',
+    description: 'Direct mail postcard designer with brand-aware AI drafts.',
+    icon: Mailbox,
   },
 ];
 

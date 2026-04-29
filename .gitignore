@@ -12,3 +12,5 @@ build/
 next-env.d.ts
 .doppler/
 coverage/
+.claude/
+tsconfig.tsbuildinfo
