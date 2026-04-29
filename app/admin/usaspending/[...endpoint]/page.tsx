@@ -2,10 +2,10 @@
 
 import { useParams } from 'next/navigation';
 import { DataSourceShell } from '@/components/data/data-source-shell';
-import { fmcsaSource } from '@/lib/data-sources/sources/fmcsa';
+import { usaspendingSource } from '@/lib/data-sources/sources/usaspending';
 
-export default function FmcsaEndpointPage() {
+export default function UsaspendingEndpointPage() {
   const params = useParams<{ endpoint: string[] }>();
   const slug = (params.endpoint ?? []).join('/');
-  return <DataSourceShell source={fmcsaSource} slug={slug} />;
+  return <DataSourceShell source={usaspendingSource} slug={slug} />;
 }

@@ -1,13 +1,6 @@
-import { FmcsaQueryProvider } from '@/components/fmcsa/query-provider';
-import { FmcsaSidebar } from '@/components/fmcsa/sidebar';
+import { DataSourceLayout } from '@/components/data/data-source-layout';
+import { fmcsaSource } from '@/lib/data-sources/sources/fmcsa';
 
 export default function FmcsaLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <FmcsaQueryProvider>
-      <div className="flex h-screen overflow-hidden">
-        <FmcsaSidebar />
-        <main className="flex min-w-0 flex-1 flex-col">{children}</main>
-      </div>
-    </FmcsaQueryProvider>
-  );
+  return <DataSourceLayout source={fmcsaSource}>{children}</DataSourceLayout>;
 }

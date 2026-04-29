@@ -76,6 +76,30 @@ body {
   animation: pulse-row 1.6s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.data-skeleton-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-3) 0%,
+    color-mix(in oklab, var(--color-surface-3) 60%, var(--color-text-muted)) 50%,
+    var(--color-surface-3) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.data-skeleton-row td:first-child .data-skeleton-bar {
+  background-color: var(--color-surface-3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,26 +1,10 @@
 'use client';
 
-import { dexFetch } from '@/lib/dex';
-
-/**
- * Typed wrappers for data-engine-x FMCSA endpoints.
- *
- * Two families:
- *  - audiences/* — POST, return AudienceListEnvelope<Signal>
- *  - carriers/*  — POST (search/stats/lookups), GET /{dot_number} (detail)
- *
- * Endpoints in the original directive that don't exist in DEX
- * (first-time-winners, contracts, /carriers/lookup) are not wrapped.
- * Carrier endpoints listed in the directive as GET are POST in DEX.
- */
+import { dexFetch, dexPost, type DataEnvelope } from './client';
 
 // ---------------------------------------------------------------------------
 // Common
 // ---------------------------------------------------------------------------
-
-export interface DataEnvelope<T> {
-  data: T;
-}
 
 export interface MvSource {
   view: string;
@@ -68,7 +52,7 @@ export interface AudienceBaseFilters {
 }
 
 // ---------------------------------------------------------------------------
-// Audience signal types (per endpoint)
+// Audience signal types
 // ---------------------------------------------------------------------------
 
 export interface NewEntrants90dSignal {
@@ -237,11 +221,6 @@ export interface SafeMidMarketRequest {
 
 // ---------------------------------------------------------------------------
 // Carrier responses
-//
-// DEX returns rows projected from mv_fmcsa_carrier_master without a Pydantic
-// response model, so the row shape is permissive. The fields below are the
-// columns documented across the carrier endpoints; additional columns may be
-// present.
 // ---------------------------------------------------------------------------
 
 export interface CarrierRow {
@@ -294,107 +273,94 @@ export interface CarrierStatsData {
 }
 
 export type CarrierStatsEnvelope = DataEnvelope<CarrierStatsData>;
-
 export type CarrierListEnvelope = DataEnvelope<CarrierSearchData>;
-
 export type CarrierDetailEnvelope = DataEnvelope<CarrierRow>;
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  return dexFetch<TRes>(path, {
-    method: 'POST',
-    body: JSON.stringify(body ?? {}),
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Audiences
+// Audience clients
 // ---------------------------------------------------------------------------
 
 export const audiences = {
   newEntrants90d: (req: NewEntrants90dRequest = {}) =>
-    postJson<NewEntrants90dRequest, AudienceListEnvelope<NewEntrants90dSignal>>(
+    dexPost<NewEntrants90dRequest, AudienceListEnvelope<NewEntrants90dSignal>>(
       '/api/v1/fmcsa/audiences/new-entrants-90d',
       req,
     ),
 
   authorityGrants: (req: AuthorityGrantsRequest = {}) =>
-    postJson<AuthorityGrantsRequest, AudienceListEnvelope<AuthorityGrantsSignal>>(
+    dexPost<AuthorityGrantsRequest, AudienceListEnvelope<AuthorityGrantsSignal>>(
       '/api/v1/fmcsa/audiences/authority-grants',
       req,
     ),
 
   insuranceLapses: (req: InsuranceLapsesRequest = {}) =>
-    postJson<InsuranceLapsesRequest, AudienceListEnvelope<InsuranceLapsesSignal>>(
+    dexPost<InsuranceLapsesRequest, AudienceListEnvelope<InsuranceLapsesSignal>>(
       '/api/v1/fmcsa/audiences/insurance-lapses',
       req,
     ),
 
   highRiskSafety: (req: HighRiskSafetyRequest = {}) =>
-    postJson<HighRiskSafetyRequest, AudienceListEnvelope<HighRiskSafetySignal>>(
+    dexPost<HighRiskSafetyRequest, AudienceListEnvelope<HighRiskSafetySignal>>(
       '/api/v1/fmcsa/audiences/high-risk-safety',
       req,
     ),
 
   insuranceRenewalWindow: (req: InsuranceRenewalWindowRequest = {}) =>
-    postJson<InsuranceRenewalWindowRequest, AudienceListEnvelope<InsuranceRenewalWindowSignal>>(
+    dexPost<InsuranceRenewalWindowRequest, AudienceListEnvelope<InsuranceRenewalWindowSignal>>(
       '/api/v1/fmcsa/audiences/insurance-renewal-window',
       req,
     ),
 
   recentRevocations: (req: RecentRevocationsRequest = {}) =>
-    postJson<RecentRevocationsRequest, AudienceListEnvelope<RecentRevocationsSignal>>(
+    dexPost<RecentRevocationsRequest, AudienceListEnvelope<RecentRevocationsSignal>>(
       '/api/v1/fmcsa/audiences/recent-revocations',
       req,
     ),
 };
 
 // ---------------------------------------------------------------------------
-// Carriers
+// Carrier clients
 // ---------------------------------------------------------------------------
 
 export const carriers = {
   search: (req: CarrierSearchRequest = {}) =>
-    postJson<CarrierSearchRequest, CarrierSearchEnvelope>(
+    dexPost<CarrierSearchRequest, CarrierSearchEnvelope>(
       '/api/v1/fmcsa/carriers/search',
       req,
     ),
 
   stats: (req: CarrierStatsRequest = {}) =>
-    postJson<CarrierStatsRequest, CarrierStatsEnvelope>(
+    dexPost<CarrierStatsRequest, CarrierStatsEnvelope>(
       '/api/v1/fmcsa/carriers/stats',
       req,
     ),
 
   insuranceCancellations: (req: InsuranceCancellationSearchRequest = {}) =>
-    postJson<InsuranceCancellationSearchRequest, CarrierListEnvelope>(
+    dexPost<InsuranceCancellationSearchRequest, CarrierListEnvelope>(
       '/api/v1/fmcsa/carriers/insurance-cancellations',
       req,
     ),
 
   newAuthority: (req: NewAuthoritySearchRequest = {}) =>
-    postJson<NewAuthoritySearchRequest, CarrierListEnvelope>(
+    dexPost<NewAuthoritySearchRequest, CarrierListEnvelope>(
       '/api/v1/fmcsa/carriers/new-authority',
       req,
     ),
 
   safeNewEntrants: (req: SafeCarrierConvenienceRequest = {}) =>
-    postJson<SafeCarrierConvenienceRequest, CarrierListEnvelope>(
+    dexPost<SafeCarrierConvenienceRequest, CarrierListEnvelope>(
       '/api/v1/fmcsa/carriers/safe-new-entrants',
       req,
     ),
 
   safeLosingCoverage: (req: SafeCarrierConvenienceRequest = {}) =>
-    postJson<SafeCarrierConvenienceRequest, CarrierListEnvelope>(
+    dexPost<SafeCarrierConvenienceRequest, CarrierListEnvelope>(
       '/api/v1/fmcsa/carriers/safe-losing-coverage',
       req,
     ),
 
   safeMidMarket: (req: SafeMidMarketRequest = {}) =>
-    postJson<SafeMidMarketRequest, CarrierListEnvelope>(
+    dexPost<SafeMidMarketRequest, CarrierListEnvelope>(
       '/api/v1/fmcsa/carriers/safe-mid-market',
       req,
     ),

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { DEFAULT_SLUG } from '@/lib/fmcsa/constants';
+import { fmcsaSource } from '@/lib/data-sources/sources/fmcsa';
 
 export default function FmcsaIndex() {
-  redirect(`/admin/fmcsa/${DEFAULT_SLUG}`);
+  redirect(`/admin/fmcsa/${fmcsaSource.defaultSlug}`);
 }

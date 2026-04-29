@@ -1,6 +1,6 @@
 'use client';
 
-import type { FilterField } from './registry';
+import type { FilterField } from './types';
 
 export const DEFAULT_LIMIT = 25;
 export const DEFAULT_OFFSET = 0;
@@ -15,23 +15,32 @@ export interface PageState {
   offset: number;
 }
 
-/**
- * Parse search-params (URLSearchParams or ReadonlyURLSearchParams) into a typed
- * form-values object based on the endpoint's filter schema. Unknown keys are
- * dropped — switching endpoints clears params from previous endpoints.
- */
+/** Apply per-field defaults to seed an empty state. */
+export function defaultsFor(fields: FilterField[]): FormValues {
+  const v: FormValues = {};
+  for (const f of fields) {
+    if (f.defaultValue !== undefined) v[f.name] = f.defaultValue;
+  }
+  return v;
+}
+
 export function parseSearchParams(
   sp: URLSearchParams | { get(name: string): string | null; getAll(name: string): string[] },
   fields: FilterField[],
 ): PageState {
   const values: FormValues = {};
+  let anyExplicit = false;
   for (const f of fields) {
     if (f.kind === 'multiselect') {
       const all = sp.getAll(f.name).flatMap((v) => v.split(',').filter(Boolean));
-      if (all.length) values[f.name] = all;
+      if (all.length) {
+        values[f.name] = all;
+        anyExplicit = true;
+      }
     } else {
       const raw = sp.get(f.name);
       if (raw == null || raw === '') continue;
+      anyExplicit = true;
       if (f.kind === 'boolean') {
         values[f.name] = raw === 'true' ? true : raw === 'false' ? false : undefined;
       } else {
@@ -39,14 +48,15 @@ export function parseSearchParams(
       }
     }
   }
+  // If no filter params present, seed with defaults
+  if (!anyExplicit) {
+    Object.assign(values, defaultsFor(fields));
+  }
   const limit = Math.max(1, Math.min(500, Number(sp.get('limit')) || DEFAULT_LIMIT));
   const offset = Math.max(0, Number(sp.get('offset')) || DEFAULT_OFFSET);
   return { values, limit, offset };
 }
 
-/**
- * Serialize page state into URL search params, dropping empties so URLs stay clean.
- */
 export function serializeState(state: PageState, fields: FilterField[]): URLSearchParams {
   const sp = new URLSearchParams();
   for (const f of fields) {
@@ -68,10 +78,6 @@ export function serializeState(state: PageState, fields: FilterField[]): URLSear
   return sp;
 }
 
-/**
- * Build the request body sent to DEX. Numeric fields parsed; empties dropped;
- * `limit` and `offset` always included.
- */
 export function toRequestBody(state: PageState, fields: FilterField[]): Record<string, unknown> {
   const body: Record<string, unknown> = {};
   for (const f of fields) {
@@ -96,4 +102,18 @@ export function toRequestBody(state: PageState, fields: FilterField[]): Record<s
   body.limit = state.limit;
   body.offset = state.offset;
   return body;
+}
+
+export function countActiveFilters(values: FormValues, fields: FilterField[]): number {
+  let n = 0;
+  for (const f of fields) {
+    const v = values[f.name];
+    if (v == null || v === '') continue;
+    if (Array.isArray(v)) {
+      if (v.length > 0) n++;
+      continue;
+    }
+    n++;
+  }
+  return n;
 }
