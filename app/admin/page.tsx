@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Boxes, Layers } from 'lucide-react';
+import { ArrowUpRight, Boxes, Layers, Mic } from 'lucide-react';
 
 interface AdminTile {
   href: string;
@@ -20,6 +20,12 @@ const TILES: AdminTile[] = [
     title: 'Audiences',
     description: 'Browse and customize audience templates with live counts.',
     icon: Layers,
+  },
+  {
+    href: '/admin/voice-agents',
+    title: 'Voice Agents',
+    description: 'Configure and manage voice agents.',
+    icon: Mic,
   },
 ];
 
