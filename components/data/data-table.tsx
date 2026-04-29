@@ -10,7 +10,27 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import type { ColumnDef } from '@/lib/data-sources/types';
+
+export type ColumnAlign = 'left' | 'right';
+
+export interface ColumnDef<TRow> {
+  key: string;
+  header: string;
+  align?: ColumnAlign;
+  /** monospace style; useful for IDs */
+  mono?: boolean;
+  /** truncate long text with title attribute tooltip */
+  truncate?: boolean;
+  /** extra CSS classes on the cell */
+  className?: string;
+  render: (row: TRow) => React.ReactNode;
+  /** plain text for tooltips / future export */
+  text?: (row: TRow) => string;
+  /** sortable on the client; default true if not specified */
+  sortable?: boolean;
+  /** explicit width in tailwind units (e.g. 'w-32') */
+  width?: string;
+}
 
 interface Props<TRow> {
   columns: ColumnDef<TRow>[];
@@ -55,7 +75,7 @@ export function DataTable<TRow>({
   });
 
   return (
-    <div className="relative h-full overflow-auto">
+    <div className="relative w-full min-w-0">
       <table className="w-full border-separate border-spacing-0 text-[12.5px]">
         <thead className="sticky top-0 z-10 bg-[var(--color-surface-1)]">
           {table.getHeaderGroups().map((hg) => (
@@ -125,7 +145,9 @@ export function DataTable<TRow>({
                       'border-b border-[var(--color-border-subtle)] px-3 py-2 align-middle ' +
                       (col?.align === 'right' ? 'text-right tabular-nums ' : 'text-left ') +
                       (col?.mono ? 'font-mono text-[12px] ' : '') +
-                      (col?.truncate ? 'max-w-[14rem] truncate ' : '') +
+                      (col?.truncate
+                        ? 'max-w-[14rem] truncate '
+                        : 'whitespace-nowrap ') +
                       (muted ? 'text-[var(--color-text-muted)] ' : 'text-[var(--color-text-primary)] ') +
                       (col?.className ? col.className : '')
                     }
@@ -167,7 +189,7 @@ export function TableSkeleton({
 }) {
   const rows = Array.from({ length: rowCount });
   return (
-    <div className="relative h-full overflow-auto">
+    <div className="relative w-full min-w-0">
       <table className="w-full border-separate border-spacing-0 text-[12.5px]">
         <thead className="sticky top-0 z-10 bg-[var(--color-surface-1)]">
           <tr>

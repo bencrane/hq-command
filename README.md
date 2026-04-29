@@ -24,6 +24,7 @@ the operator's Supabase JWT attached.
 | `NEXT_PUBLIC_HQX_SUPABASE_PUBLISHABLE_KEY` | Same value as hq-x's `HQX_SUPABASE_PUBLISHABLE_KEY`. Inlined into client bundle. |
 | `HQX_API_BASE_URL` | Base URL of the hq-x service, no trailing slash. Local dev: `http://localhost:8000`. Staging/prod: the corresponding Railway public URL of hq-x. |
 | `APP_ENV` | `dev`, `stg`, or `prd` — must match the Doppler config it lives in (i.e. the `dev` config has `APP_ENV=dev`, etc.). The app reads this at runtime; the Doppler token's scope drives which config is loaded, so `APP_ENV` only needs to be set inside Doppler, never on Railway. |
+| `NEXT_PUBLIC_AUDIENCE_BUILDER_FIXTURES` | Optional. Set to `1` in `dev` to make `/admin/audience-builder` use bundled fixture data instead of calling `data-engine-x` `/api/v1/audiences/*`. Useful for frontend work while the backend is still landing. Leave unset in `stg` and `prd`. |
 
 > The frontend never needs `HQX_SUPABASE_SERVICE_ROLE_KEY` or any Supabase JWT
 > secret. All privileged operations go through `hq-x`.
