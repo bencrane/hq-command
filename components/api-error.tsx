@@ -97,6 +97,19 @@ export function ApiErrorDisplay({ error, compact, onRetry, onDismiss, className 
         <RawResponse rawText={rawText} raw={raw} />
       )}
 
+      {/* Empty body, no envelope — the upstream sent literally nothing. Tell the
+          operator so they don't think the UI swallowed something. This is the
+          shape we got when a Next route handler threw an unhandled exception
+          (e.g. proxyToHqx's fetch failed before our error wrapper landed). */}
+      {!bodyContent && !rawText && raw == null && (
+        <Body>
+          <span className="italic opacity-80">
+            (No response body. Likely an unhandled server exception — check
+            server logs for the route handler that produced this status.)
+          </span>
+        </Body>
+      )}
+
       {(method || path || requestId || exceptionType) && (
         <Diagnostics>
           {method && path && (
