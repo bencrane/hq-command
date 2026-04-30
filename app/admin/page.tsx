@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Layers, Mailbox, Mic, Target } from 'lucide-react';
+import { ArrowUpRight, Layers, LayoutTemplate, Mailbox, Mic, Target } from 'lucide-react';
 
 interface AdminTile {
   href: string;
@@ -33,6 +33,12 @@ const TILES: AdminTile[] = [
     title: 'DMaaS',
     description: 'Direct mail postcard designer with brand-aware AI drafts.',
     icon: Mailbox,
+  },
+  {
+    href: '/admin/scaffolds',
+    title: 'Scaffolds',
+    description: 'Browse the v1 scaffold library.',
+    icon: LayoutTemplate,
   },
 ];
 
