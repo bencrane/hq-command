@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
-import { useBrandId } from '@/components/voice-agents/use-brand';
+import { useBrandId, isValidBrandId } from '@/components/voice-agents/use-brand';
 import {
   AssistantForm,
   buildBody,
@@ -20,14 +20,15 @@ export default function NewVoiceAgentPage() {
   const searchParams = useSearchParams();
   const [stored] = useBrandId();
   const brandId = searchParams.get('brand_id') || stored;
+  const brandIdIsValid = isValidBrandId(brandId);
 
   const [state, setState] = useState<AssistantFormState>(emptyState());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
   const submit = async () => {
-    if (!brandId) {
-      setError(new Error('Set a brand first.'));
+    if (!brandIdIsValid) {
+      setError(new Error('Set a valid brand UUID first.'));
       return;
     }
     if (!state.name.trim()) {
@@ -62,8 +63,10 @@ export default function NewVoiceAgentPage() {
             New voice agent
           </h1>
           <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
-            {brandId ? (
+            {brandIdIsValid ? (
               <>Brand <span className="font-mono">{brandId.slice(0, 8)}…</span></>
+            ) : brandId ? (
+              'Brand ID is not a valid UUID — return to list and pick one.'
             ) : (
               'No brand set — return to list and select one.'
             )}
@@ -91,7 +94,7 @@ export default function NewVoiceAgentPage() {
         <button
           type="button"
           onClick={submit}
-          disabled={submitting || !brandId}
+          disabled={submitting || !brandIdIsValid}
           className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-3 text-[12px] font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting && <Loader2 size={12} className="animate-spin" />}

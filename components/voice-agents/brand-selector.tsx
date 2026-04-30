@@ -1,9 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { voiceAgentsApi } from '@/lib/voice-agents/client';
+import { isValidBrandId } from './use-brand';
 
 interface Props {
   brandId: string;
@@ -14,6 +15,12 @@ export function BrandSelector({ brandId, onChange }: Props) {
   const [draft, setDraft] = useState(brandId);
   const [open, setOpen] = useState(false);
 
+  // Keep the input in sync if brandId is updated from outside (e.g. cleared
+  // because a stale value was discarded as non-UUID on mount).
+  useEffect(() => {
+    setDraft(brandId);
+  }, [brandId]);
+
   const brandsQuery = useQuery({
     queryKey: ['voice-agents', 'brands'],
     queryFn: () => voiceAgentsApi.listBrands(),
@@ -21,6 +28,10 @@ export function BrandSelector({ brandId, onChange }: Props) {
 
   const brands = brandsQuery.data ?? [];
   const active = brands.find((b) => b.id === brandId);
+
+  const trimmed = draft.trim();
+  const draftIsValid = isValidBrandId(trimmed);
+  const showInvalidHint = trimmed.length > 0 && !draftIsValid;
 
   return (
     <div className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] p-3">
@@ -38,18 +49,25 @@ export function BrandSelector({ brandId, onChange }: Props) {
           className="flex flex-1 items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            onChange(draft.trim());
+            if (!draftIsValid) return;
+            onChange(trimmed);
           }}
         >
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Paste brand UUID"
-            className="h-8 flex-1 rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-2)] px-2.5 font-mono text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
+            aria-invalid={showInvalidHint || undefined}
+            className={
+              'h-8 flex-1 rounded-md border bg-[var(--color-surface-2)] px-2.5 font-mono text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none ' +
+              (showInvalidHint
+                ? 'border-[var(--color-danger)]/60 focus:border-[var(--color-danger)]'
+                : 'border-[var(--color-border-default)] focus:border-[var(--color-accent)]')
+            }
           />
           <button
             type="submit"
-            disabled={!draft.trim() || draft === brandId}
+            disabled={!draftIsValid || trimmed === brandId}
             className="h-8 rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-2)] px-3 text-[12px] font-medium text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Set
@@ -101,6 +119,14 @@ export function BrandSelector({ brandId, onChange }: Props) {
           )}
         </div>
       </div>
+
+      {showInvalidHint && (
+        <p className="mt-2 text-[11px] text-[var(--color-danger)]">
+          Brand IDs are UUIDs (e.g.{' '}
+          <span className="font-mono">00000000-0000-0000-0000-000000000000</span>) — pick one
+          from the list instead.
+        </p>
+      )}
     </div>
   );
 }
