@@ -3,7 +3,9 @@
  *
  * hq-x ships every error as `{detail: {error, type?, message?, request_id?,
  * method?, path?, retryable?, errors?, conflicts?, ...}}`. This module
- * preserves that envelope end-to-end so the UI can render it in full.
+ * preserves that envelope end-to-end so the UI can render it in full — and
+ * when something *not* shaped like the envelope arrives, hands the raw body
+ * to the UI verbatim instead of inventing a fallback.
  */
 
 export type ApiErrorDetail =
@@ -35,28 +37,47 @@ export class ApiError extends Error {
   /** HTTP status. 0 means the network call itself failed (DNS, offline, CORS). */
   status: number;
   statusText: string;
-  /** Parsed `detail` from the response envelope, or a string fallback. */
-  detail: ApiErrorDetail;
-  /** Raw response body (string or parsed object). For copy-to-clipboard. */
+  /**
+   * Parsed `detail` from the response envelope, or a string fallback. May be
+   * `null` when the body is empty or unparseable — the UI must check `rawText`
+   * in that case.
+   */
+  detail: ApiErrorDetail | null;
+  /** Raw response body parsed as JSON if possible, else `null`. */
   raw: unknown;
+  /** Raw response body as text (always present, may be empty). */
+  rawText: string;
+  /** True if the body is JSON and matches the hq-x `{detail: {...}}` envelope. */
+  hasEnvelope: boolean;
   /** URL that was requested. Useful for "couldn't reach server" messaging. */
   url: string;
 
   constructor(args: {
     status: number;
     statusText: string;
-    detail: ApiErrorDetail;
+    detail: ApiErrorDetail | null;
     raw: unknown;
+    rawText: string;
+    hasEnvelope: boolean;
     url: string;
   }) {
-    const code = typeof args.detail === 'object' ? args.detail?.error : undefined;
-    const msg = typeof args.detail === 'object' ? args.detail?.message : args.detail;
-    super(`${args.status} ${code ?? args.statusText}${msg ? `: ${msg}` : ''}`);
+    const code = typeof args.detail === 'object' && args.detail ? args.detail.error : undefined;
+    const msg =
+      typeof args.detail === 'string'
+        ? args.detail
+        : args.detail && typeof args.detail === 'object'
+          ? args.detail.message
+          : undefined;
+    super(
+      `${args.status} ${code ?? args.statusText ?? 'error'}${msg ? `: ${msg}` : ''}`,
+    );
     this.name = 'ApiError';
     this.status = args.status;
     this.statusText = args.statusText;
     this.detail = args.detail;
     this.raw = args.raw;
+    this.rawText = args.rawText;
+    this.hasEnvelope = args.hasEnvelope;
     this.url = args.url;
   }
 }
@@ -85,6 +106,8 @@ export async function apiFetch<T>(input: string, init: RequestInit = {}): Promis
         message: `Couldn't reach server: ${message}`,
       },
       raw: null,
+      rawText: '',
+      hasEnvelope: false,
       url: input,
     });
   }
@@ -93,21 +116,29 @@ export async function apiFetch<T>(input: string, init: RequestInit = {}): Promis
     return null as T;
   }
 
-  const text = await r.text();
-  let parsed: unknown = text;
-  try {
-    parsed = text ? JSON.parse(text) : null;
-  } catch {
-    /* keep raw text */
+  const rawText = await r.text();
+  let parsed: unknown = null;
+  if (rawText) {
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      parsed = null;
+    }
   }
 
   if (!r.ok) {
-    const detail = extractDetail(parsed, r.statusText);
+    // NextResponse.json() doesn't preserve upstream statusText. Our proxy
+    // forwards it via x-hqx-status-text so the client can recover it for
+    // display.
+    const upstreamStatusText = r.headers.get('x-hqx-status-text') || r.statusText;
+    const { detail, hasEnvelope } = extractDetail(parsed, rawText);
     throw new ApiError({
       status: r.status,
-      statusText: r.statusText,
+      statusText: upstreamStatusText,
       detail,
       raw: parsed,
+      rawText,
+      hasEnvelope,
       url: input,
     });
   }
@@ -115,15 +146,32 @@ export async function apiFetch<T>(input: string, init: RequestInit = {}): Promis
   return parsed as T;
 }
 
-function extractDetail(body: unknown, statusText: string): ApiErrorDetail {
+/**
+ * Pull the `detail` envelope out of a response body. Crucially: when the body
+ * does NOT match the `{detail: ...}` shape, we return `detail: null` and let
+ * the caller render the raw text instead of synthesizing a fake envelope.
+ */
+function extractDetail(
+  body: unknown,
+  rawText: string,
+): { detail: ApiErrorDetail | null; hasEnvelope: boolean } {
   if (body && typeof body === 'object' && 'detail' in body) {
     const d = (body as { detail: unknown }).detail;
-    // FastAPI's raise HTTPException(status, "string") yields {detail: "string"}.
-    if (typeof d === 'string') return d;
-    if (d && typeof d === 'object') return d as ApiErrorDetail;
+    if (typeof d === 'string') return { detail: d, hasEnvelope: true };
+    if (d && typeof d === 'object') return { detail: d as ApiErrorDetail, hasEnvelope: true };
   }
-  if (typeof body === 'string' && body) return body;
-  return { error: statusText.toLowerCase().replace(/\s+/g, '_') || 'error' };
+  // FastAPI legacy shape: HTTPException with a string detail. Some upstream
+  // services also return plain strings.
+  if (typeof body === 'string' && body) return { detail: body, hasEnvelope: false };
+  // Body parsed but doesn't match the envelope — preserve verbatim if it's
+  // an object so the UI can show the actual fields.
+  if (body && typeof body === 'object') {
+    return { detail: body as ApiErrorDetail, hasEnvelope: false };
+  }
+  // No parseable body — fall back to raw text if any. The UI distinguishes
+  // hasEnvelope=false from missing detail to render the raw payload.
+  if (rawText) return { detail: rawText, hasEnvelope: false };
+  return { detail: null, hasEnvelope: false };
 }
 
 /**
@@ -134,7 +182,9 @@ export function apiErrorSummary(err: unknown): string {
   if (err instanceof ApiError) {
     const d = err.detail;
     if (typeof d === 'string') return d;
-    return d.message ?? d.error ?? `${err.status} ${err.statusText}`;
+    if (d && typeof d === 'object') return d.message ?? d.error ?? `${err.status} ${err.statusText}`;
+    if (err.rawText) return err.rawText.slice(0, 200);
+    return `${err.status} ${err.statusText || 'error'}`;
   }
   if (err instanceof Error) return err.message;
   return String(err);
