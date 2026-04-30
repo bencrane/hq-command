@@ -40,9 +40,11 @@ describe('proxyToHqx', () => {
     mockSession('jwt-abc');
     const originalFetch = globalThis.fetch;
     globalThis.fetch = vi.fn(async () => {
-      const e = new TypeError('fetch failed');
-      // @ts-expect-error: simulate undici cause shape
-      e.cause = { code: 'ECONNREFUSED', message: '' };
+      // Match undici's TypeError("fetch failed") with a cause object carrying
+      // the OS-level error code — that's how Node.js surfaces ECONNREFUSED etc.
+      const e = new TypeError('fetch failed', {
+        cause: { code: 'ECONNREFUSED', message: '' },
+      });
       throw e;
     }) as typeof fetch;
 

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 
-import { useBrandId } from '@/components/voice-agents/use-brand';
+import { useBrandId, isValidBrandId } from '@/components/voice-agents/use-brand';
 import {
   AssistantForm,
   buildBody,
@@ -23,13 +23,14 @@ export default function VoiceAgentDetailPage() {
   const searchParams = useSearchParams();
   const [stored] = useBrandId();
   const brandId = searchParams.get('brand_id') || stored;
+  const brandIdIsValid = isValidBrandId(brandId);
   const id = params.id;
   const qc = useQueryClient();
 
   const query = useQuery({
     queryKey: ['voice-agents', 'detail', brandId, id],
     queryFn: () => voiceAgentsApi.getAssistant(brandId, id),
-    enabled: !!brandId && !!id,
+    enabled: brandIdIsValid && !!id,
   });
 
   const [state, setState] = useState<AssistantFormState>(emptyState());
@@ -114,17 +115,19 @@ export default function VoiceAgentDetailPage() {
         </div>
       )}
 
-      {!brandId && (
+      {!brandIdIsValid && (
         <div className="mt-8 rounded-md border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-4 py-12 text-center text-[12.5px] text-[var(--color-text-tertiary)]">
-          No brand set. Return to the list and select one.
+          {brandId
+            ? 'Brand ID is not a valid UUID. Return to the list and pick one.'
+            : 'No brand set. Return to the list and select one.'}
         </div>
       )}
 
-      {brandId && query.isLoading && (
+      {brandIdIsValid && query.isLoading && (
         <div className="mt-8 h-96 animate-pulse rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)]" />
       )}
 
-      {brandId && query.data && (
+      {brandIdIsValid && query.data && (
         <>
           <div className="mt-8">
             <AssistantForm
