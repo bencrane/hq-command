@@ -14,8 +14,8 @@ import {
   stateFromAssistant,
   type AssistantFormState,
 } from '@/components/voice-agents/assistant-form';
-import { voiceAgentsApi, describeVoiceAgentsError } from '@/lib/voice-agents/client';
-import { ErrorBanner } from '@/components/fmcsa/states';
+import { voiceAgentsApi } from '@/lib/voice-agents/client';
+import { ApiErrorDisplay } from '@/components/api-error';
 
 export default function VoiceAgentDetailPage() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function VoiceAgentDetailPage() {
   });
 
   const [state, setState] = useState<AssistantFormState>(emptyState());
-  const [error, setError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<unknown>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -47,9 +47,9 @@ export default function VoiceAgentDetailPage() {
     onSuccess: (data) => {
       qc.setQueryData(['voice-agents', 'detail', brandId, id], data);
       qc.invalidateQueries({ queryKey: ['voice-agents', 'list', brandId] });
-      setError(null);
+      setMutationError(null);
     },
-    onError: (err) => setError(describeVoiceAgentsError(err)),
+    onError: (err) => setMutationError(err),
   });
 
   const deleteMutation = useMutation({
@@ -59,12 +59,12 @@ export default function VoiceAgentDetailPage() {
       router.push('/admin/voice-agents');
     },
     onError: (err) => {
-      setError(describeVoiceAgentsError(err));
+      setMutationError(err);
       setConfirmDelete(false);
     },
   });
 
-  const queryError = query.error ? describeVoiceAgentsError(query.error) : null;
+  const visibleError = query.error ?? mutationError;
   const submitting = updateMutation.isPending || deleteMutation.isPending;
 
   return (
@@ -102,13 +102,13 @@ export default function VoiceAgentDetailPage() {
         )}
       </div>
 
-      {(queryError || error) && (
+      {visibleError != null && (
         <div className="mt-6">
-          <ErrorBanner
-            message={queryError || error || ''}
+          <ApiErrorDisplay
+            error={visibleError}
+            onRetry={query.error ? () => query.refetch() : undefined}
             onDismiss={() => {
-              setError(null);
-              query.refetch();
+              setMutationError(null);
             }}
           />
         </div>

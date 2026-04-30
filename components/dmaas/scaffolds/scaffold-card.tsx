@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle } from 'lucide-react';
+import { ApiErrorDisplay } from '@/components/api-error';
 import { scaffoldsClient } from '@/lib/dmaas/scaffolds-client';
 import {
   FORMAT_LABEL,
@@ -50,7 +50,9 @@ export function ScaffoldCard({ scaffold, onOpen }: Props) {
       >
         {previewQuery.isLoading && <PreviewSkeleton />}
         {previewQuery.isError && (
-          <PreviewError message={(previewQuery.error as Error).message} />
+          <div className="flex h-full w-full items-center p-3">
+            <ApiErrorDisplay error={previewQuery.error} compact className="w-full" />
+          </div>
         )}
         {previewQuery.isSuccess && (
           <div className="flex h-full w-full items-center justify-center p-3">
@@ -107,17 +109,6 @@ function PreviewSkeleton() {
   return (
     <div className="grid h-full w-full place-items-center">
       <div className="data-skeleton-bar h-3/4 w-3/4 rounded" />
-    </div>
-  );
-}
-
-function PreviewError({ message }: { message: string }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center p-4">
-      <div className="flex items-start gap-2 text-[11px] text-[var(--color-danger)]">
-        <AlertCircle size={14} className="mt-0.5 shrink-0" />
-        <span className="line-clamp-3">{message}</span>
-      </div>
     </div>
   );
 }
