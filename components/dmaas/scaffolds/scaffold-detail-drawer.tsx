@@ -4,10 +4,10 @@ import { useMemo, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { ChevronDown, Code2, Loader2 } from 'lucide-react';
 import {
-  DrawerError,
   DrawerShell,
   DrawerSkeleton,
 } from '@/components/data/drawers/drawer-shell';
+import { ApiErrorDisplay } from '@/components/api-error';
 import { scaffoldsClient } from '@/lib/dmaas/scaffolds-client';
 import {
   FORMAT_LABEL,
@@ -69,14 +69,15 @@ function DrawerBody({ slug }: { slug: string }) {
   if (scaffoldQuery.isLoading) return <DrawerSkeleton />;
   if (scaffoldQuery.isError || !scaffold) {
     return (
-      <DrawerError
-        message={(scaffoldQuery.error as Error)?.message ?? 'Failed to load scaffold'}
+      <ApiErrorDisplay
+        error={scaffoldQuery.error}
+        onRetry={() => scaffoldQuery.refetch()}
       />
     );
   }
 
   const activePreview = previewQueries[activeSpecIdx]?.data;
-  const previewError = previewQueries[activeSpecIdx]?.error as Error | undefined;
+  const previewError = previewQueries[activeSpecIdx]?.error;
   const previewLoading = previewQueries[activeSpecIdx]?.isLoading;
 
   const strategy = strategyOf(scaffold);
@@ -154,7 +155,10 @@ function DrawerBody({ slug }: { slug: string }) {
           </div>
         )}
         {previewError && (
-          <DrawerError message={previewError.message ?? 'Preview failed'} />
+          <ApiErrorDisplay
+            error={previewError}
+            onRetry={() => previewQueries[activeSpecIdx]?.refetch()}
+          />
         )}
         {activePreview && (
           <div className="flex w-full justify-center">

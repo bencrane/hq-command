@@ -6,9 +6,9 @@ import { ArrowUpRight, Loader2, Mic, Plus, AlertTriangle } from 'lucide-react';
 
 import { useBrandId } from '@/components/voice-agents/use-brand';
 import { BrandSelector } from '@/components/voice-agents/brand-selector';
-import { voiceAgentsApi, describeVoiceAgentsError } from '@/lib/voice-agents/client';
+import { voiceAgentsApi } from '@/lib/voice-agents/client';
 import type { AssistantWithVapi } from '@/lib/voice-agents/types';
-import { ErrorBanner } from '@/components/fmcsa/states';
+import { ApiErrorDisplay } from '@/components/api-error';
 
 export default function VoiceAgentsListPage() {
   const [brandId, setBrandId] = useBrandId();
@@ -20,7 +20,6 @@ export default function VoiceAgentsListPage() {
   });
 
   const items = query.data ?? [];
-  const error = query.error ? describeVoiceAgentsError(query.error) : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 pt-20 pb-12">
@@ -62,15 +61,15 @@ export default function VoiceAgentsListPage() {
         </div>
       )}
 
-      {error && brandId && (
+      {query.isError && brandId && (
         <div className="mt-6">
-          <ErrorBanner message={error} onDismiss={() => query.refetch()} />
+          <ApiErrorDisplay error={query.error} onRetry={() => query.refetch()} />
         </div>
       )}
 
       {brandId && query.isLoading && <ListSkeleton />}
 
-      {brandId && !query.isLoading && !error && items.length === 0 && (
+      {brandId && !query.isLoading && !query.isError && items.length === 0 && (
         <div className="mt-8 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-1)] px-4 py-8 text-center text-[12.5px] text-[var(--color-text-tertiary)]">
           No voice agents yet. Create one to get started.
         </div>

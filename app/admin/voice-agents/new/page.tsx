@@ -12,8 +12,8 @@ import {
   emptyState,
   type AssistantFormState,
 } from '@/components/voice-agents/assistant-form';
-import { voiceAgentsApi, describeVoiceAgentsError } from '@/lib/voice-agents/client';
-import { ErrorBanner } from '@/components/fmcsa/states';
+import { voiceAgentsApi } from '@/lib/voice-agents/client';
+import { ApiErrorDisplay } from '@/components/api-error';
 
 export default function NewVoiceAgentPage() {
   const router = useRouter();
@@ -23,15 +23,15 @@ export default function NewVoiceAgentPage() {
 
   const [state, setState] = useState<AssistantFormState>(emptyState());
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const submit = async () => {
     if (!brandId) {
-      setError('Set a brand first.');
+      setError(new Error('Set a brand first.'));
       return;
     }
     if (!state.name.trim()) {
-      setError('Name is required.');
+      setError(new Error('Name is required.'));
       return;
     }
     setError(null);
@@ -43,7 +43,7 @@ export default function NewVoiceAgentPage() {
         `/admin/voice-agents/${encodeURIComponent(res.local.id)}?brand_id=${encodeURIComponent(brandId)}`,
       );
     } catch (err) {
-      setError(describeVoiceAgentsError(err));
+      setError(err);
       setSubmitting(false);
     }
   };
@@ -71,9 +71,9 @@ export default function NewVoiceAgentPage() {
         </div>
       </div>
 
-      {error && (
+      {error != null && (
         <div className="mt-6">
-          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+          <ApiErrorDisplay error={error} onDismiss={() => setError(null)} />
         </div>
       )}
 

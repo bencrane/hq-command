@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { ApiErrorDisplay } from '@/components/api-error';
 import { scaffoldsClient } from '@/lib/dmaas/scaffolds-client';
 import {
   FORMAT_LABEL,
@@ -86,7 +87,12 @@ export function ScaffoldGallery() {
 
       {listQuery.isLoading && <LoadingState />}
       {listQuery.isError && (
-        <ErrorState message={(listQuery.error as Error).message ?? 'Failed to load scaffolds'} />
+        <div className="mt-6">
+          <ApiErrorDisplay
+            error={listQuery.error}
+            onRetry={() => listQuery.refetch()}
+          />
+        </div>
       )}
 
       {listQuery.isSuccess && (
@@ -241,18 +247,6 @@ function LoadingState() {
     <div className="mt-12 flex items-center justify-center gap-2 text-[12.5px] text-[var(--color-text-tertiary)]">
       <Loader2 size={14} className="animate-spin" />
       Loading scaffolds…
-    </div>
-  );
-}
-
-function ErrorState({ message }: { message: string }) {
-  return (
-    <div
-      role="alert"
-      className="mt-8 flex items-start gap-2 rounded-md border border-[var(--color-danger)]/30 bg-[var(--color-danger-muted)] px-3 py-2 text-[12px] text-[var(--color-danger)]"
-    >
-      <AlertCircle size={14} className="mt-0.5" />
-      <span>{message}</span>
     </div>
   );
 }
