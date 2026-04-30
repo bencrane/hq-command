@@ -44,23 +44,38 @@ export function ApiErrorDisplay({ error, compact, onRetry, onDismiss, className 
     );
   }
 
-  const { status, statusText, detail, raw, url } = error;
+  const { status, statusText, detail, raw, rawText, hasEnvelope, url } = error;
   const isString = typeof detail === 'string';
-  const code = isString ? null : detail.error ?? null;
-  const message = isString ? detail : detail.message;
-  const method = !isString ? detail.method : undefined;
-  const path = !isString ? detail.path : undefined;
-  const requestId = !isString ? detail.request_id : undefined;
-  const exceptionType = !isString ? detail.type : undefined;
-  const fieldErrors = !isString && Array.isArray(detail.errors) ? detail.errors : null;
-  const conflicts = !isString && Array.isArray(detail.conflicts) ? detail.conflicts : null;
+  const isObject = !isString && detail !== null && typeof detail === 'object';
 
-  // Surface remaining detail keys we didn't explicitly pull out.
-  const extra = !isString ? extraEntries(detail) : null;
+  // Heading: prefer envelope error code, fall back to upstream statusText, then
+  // a generic "error" — never invent something that looks like a real code.
+  const code = hasEnvelope && isObject ? (detail.error ?? null) : null;
+  const message = isString ? detail : isObject ? detail.message : undefined;
+  const method = isObject ? detail.method : undefined;
+  const path = isObject ? detail.path : undefined;
+  const requestId = isObject ? detail.request_id : undefined;
+  const exceptionType = isObject ? detail.type : undefined;
+  const fieldErrors =
+    hasEnvelope && isObject && Array.isArray(detail.errors) ? detail.errors : null;
+  const conflicts =
+    hasEnvelope && isObject && Array.isArray(detail.conflicts) ? detail.conflicts : null;
 
-  // Body fallback: the JSON-pretty-printed detail (truncated) when no message.
-  let bodyContent: React.ReactNode = message;
-  if (!message) {
+  // Surface remaining detail keys we didn't explicitly pull out (only when the
+  // body matches the envelope shape — otherwise the whole body goes in the
+  // "Raw response" section instead).
+  const extra = hasEnvelope && isObject ? extraEntries(detail) : null;
+
+  // Body content selection (in priority order):
+  //   1. If we have an explicit message, use it.
+  //   2. If we have an envelope object but no message, pretty-print it.
+  //   3. Otherwise we DON'T have an envelope — fall through to the "Raw
+  //      response" section below so we don't dress up a non-envelope body
+  //      as if it were a structured error.
+  let bodyContent: React.ReactNode = null;
+  if (message) {
+    bodyContent = message;
+  } else if (hasEnvelope && isObject) {
     const json = JSON.stringify(detail, null, 2);
     bodyContent = json.length > 600 ? json.slice(0, 600) + '…' : json;
   }
@@ -70,9 +85,17 @@ export function ApiErrorDisplay({ error, compact, onRetry, onDismiss, className 
       <Heading
         status={status === 0 ? null : status}
         code={code}
-        statusText={status === 0 ? "Couldn't reach server" : statusText}
+        statusText={
+          status === 0
+            ? "Couldn't reach server"
+            : statusText || (status ? `HTTP ${status}` : 'error')
+        }
       />
       {bodyContent && <Body>{bodyContent}</Body>}
+
+      {!hasEnvelope && (rawText || raw != null) && (
+        <RawResponse rawText={rawText} raw={raw} />
+      )}
 
       {(method || path || requestId || exceptionType) && (
         <Diagnostics>
@@ -151,7 +174,9 @@ const SKIP_KEYS = new Set([
   'conflicts',
 ]);
 
-function extraEntries(detail: Exclude<ApiError['detail'], string>): [string, unknown][] {
+function extraEntries(
+  detail: Exclude<ApiError['detail'], string | null>,
+): [string, unknown][] {
   return Object.entries(detail).filter(([k, v]) => !SKIP_KEYS.has(k) && v != null);
 }
 
@@ -241,6 +266,36 @@ function Diagnostics({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10.5px] text-[var(--color-danger)]/80">
       {children}
+    </div>
+  );
+}
+
+function RawResponse({ rawText, raw }: { rawText: string; raw: unknown }) {
+  // Prefer pretty-printed JSON when the body parsed successfully. Otherwise
+  // show the raw text — even if it's HTML or a stack trace, that's still
+  // more useful than a synthesized fallback.
+  let display = rawText;
+  if (raw != null && typeof raw === 'object') {
+    try {
+      display = JSON.stringify(raw, null, 2);
+    } catch {
+      /* keep rawText */
+    }
+  }
+  if (!display) {
+    return (
+      <div className="text-[11.5px] italic opacity-70">(empty response body)</div>
+    );
+  }
+  const truncated = display.length > 1200 ? display.slice(0, 1200) + '\n…' : display;
+  return (
+    <div className="space-y-1">
+      <div className="text-[10px] font-medium uppercase tracking-[1.2px] opacity-70">
+        Raw response
+      </div>
+      <pre className="max-h-[300px] overflow-auto rounded border border-[var(--color-danger)]/20 bg-[var(--color-surface-0)]/50 p-2 font-mono text-[10.5px] leading-relaxed text-[var(--color-danger)]/90">
+        {truncated}
+      </pre>
     </div>
   );
 }

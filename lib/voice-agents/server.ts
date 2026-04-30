@@ -11,7 +11,9 @@ export async function proxyToHqx(path: string, init: RequestInit = {}): Promise<
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const r = await fetch(`${env.HQX_API_BASE_URL}${path}`, {
+  const url = `${env.HQX_API_BASE_URL}${path}`;
+  const method = (init.method ?? 'GET').toUpperCase();
+  const r = await fetch(url, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -31,20 +33,36 @@ export async function proxyToHqx(path: string, init: RequestInit = {}): Promise<
   // envelope ({detail: {error, message, request_id, ...}}) that the client
   // needs to render in full. Wrapping it here would obscure the real error.
   if (!r.ok) {
+    // Operator-facing trace so any non-2xx leaves a paper trail in server
+    // logs. Truncate the body to keep the line readable; full body is in the
+    // response itself.
+    console.error(
+      '[proxyToHqx]',
+      JSON.stringify({
+        method,
+        url,
+        status: r.status,
+        statusText: r.statusText,
+        contentType: r.headers.get('content-type'),
+        bodyPreview: text.slice(0, 1000),
+      }),
+    );
+
+    const headers = { 'x-hqx-status-text': r.statusText || '' };
     if (!text) {
       return NextResponse.json(
-        { detail: { error: 'upstream_error', message: r.statusText } },
-        { status: r.status },
+        { detail: { error: 'upstream_error', message: r.statusText || '(empty response body)' } },
+        { status: r.status, headers },
       );
     }
     try {
       const json = JSON.parse(text) as unknown;
-      return NextResponse.json(json, { status: r.status });
+      return NextResponse.json(json, { status: r.status, headers });
     } catch {
       // Non-JSON body — wrap as an envelope so clients can rely on the shape.
       return NextResponse.json(
         { detail: { error: 'upstream_error', message: text } },
-        { status: r.status },
+        { status: r.status, headers },
       );
     }
   }
