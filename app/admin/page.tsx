@@ -1,5 +1,15 @@
 import Link from 'next/link';
-import { ArrowUpRight, Layers, LayoutTemplate, Mailbox, Mic, Target } from 'lucide-react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  Cpu,
+  Layers,
+  LayoutTemplate,
+  Mailbox,
+  Mic,
+  Rocket,
+  Target,
+} from 'lucide-react';
 
 interface AdminTile {
   href: string;
@@ -39,6 +49,27 @@ const TILES: AdminTile[] = [
     title: 'Scaffolds',
     description: 'Browse the v1 scaffold library.',
     icon: LayoutTemplate,
+  },
+  {
+    href: '/admin/initiatives',
+    title: 'GTM Initiatives',
+    description:
+      'Run and inspect post-payment GTM pipelines: per-step input, output, prompt, mcp trace.',
+    icon: Rocket,
+  },
+  {
+    href: '/admin/agents',
+    title: 'Agents & Prompts',
+    description:
+      'Edit, activate, and roll back system prompts for managed-agent subagents.',
+    icon: Cpu,
+  },
+  {
+    href: '/admin/doctrine',
+    title: 'Operator Doctrine',
+    description:
+      'Edit acq-eng margin floor, capital outlay cap, and per-step model tier policy.',
+    icon: BookOpen,
   },
 ];
 
